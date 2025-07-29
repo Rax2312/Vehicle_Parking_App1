@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="admin-dashboard-heading" style="margin-top:3.2rem; margin-bottom:1.2rem; text-align:center;">View
+    Reservations</h2>
+<div class="card shadow-lg p-4 mb-4 mx-auto" style="max-width:1000px; min-width:350px;">
+    <div class="card-header bg-warning text-white text-center fs-4 mb-3">Reservation History</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="bg-warning text-white">
+                    <tr>
+                        <th>Parking Lot</th>
+                        <th>Address</th>
+                        <th>Date of Booking</th>
+                        <th>Time (Hours)</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in reservations %}
+                    <tr>
+                        <td>{{ res.lot_name }}</td>
+                        <td>{{ res.address }}</td>
+                        <td>{{ res.date }}</td>
+                        <td>{{ res.time }}</td>
+                        <td>₹{{ "%.2f"|format(res.revenue) if res.revenue else "0.00" }}</td>
+                        <td>
+                            <span
+                                class="badge {% if res.status == 'Active' %}bg-success{% else %}bg-primary{% endif %}">
+                                {{ res.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if res.status == 'Active' %}
+                            <form method="POST" action="{{ url_for('user.release_spot', reservation_id=res.id) }}"
+                                style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger">Release Spot</button>
+                            </form>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="text-center mt-4">
+    <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-primary btn-lg px-5">Back to Dashboard</a>
+</div>
+{% endblock %}
+
+<script>
+    setInterval(function () {
+        // AJAX call to update prices
+        console.log('Updating prices...');
+    }, 60000); // 60 seconds
+</script>

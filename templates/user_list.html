@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block title %}User Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center" style="width:100%; margin-top:2rem;">
+    <a class="back-btn" href="{{ url_for('admin.dashboard') }}"
+        style="position:relative;top:0;left:0;margin-top:2rem;margin-bottom:0.2rem;">&#8592; Back</a>
+</div>
+<h2 class="management-heading" style="text-align:center;">User Management</h2>
+<div class="mb-2 management-subheading">View, Flag, or Unflag Users</div>
+<div class="mt-4"></div>
+<div class="d-flex justify-content-center align-items-center mb-3" style="gap:1rem;">
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userSearchTypeDropdown"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            <span id="userSearchTypeLabel">Name</span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="userSearchTypeDropdown">
+            <li><a class="dropdown-item" href="#" onclick="setUserSearchType('Name')">Name</a></li>
+            <li><a class="dropdown-item" href="#" onclick="setUserSearchType('Address')">Address</a></li>
+            <li><a class="dropdown-item" href="#" onclick="setUserSearchType('Phone')">Phone</a></li>
+            <li><a class="dropdown-item" href="#" onclick="setUserSearchType('Age')">Age</a></li>
+            <li><a class="dropdown-item" href="#" onclick="setUserSearchType('Number of Reservations')">Number of
+                    Reservations</a></li>
+        </ul>
+    </div>
+    <div id="userSearchInputGroup" class="input-group" style="max-width: 320px;">
+        <input type="text" class="form-control" id="userSearchInput" placeholder="Search users..." autocomplete="off">
+        <button class="btn btn-primary" type="button" id="userSearchBtn">Search</button>
+    </div>
+    <div id="userSearchSliderGroup" class="d-none align-items-center" style="min-width:220px;">
+        <span class="me-2" style="color:#fff">0</span>
+        <input type="range" class="form-range" min="0" max="50" value="0" id="userSearchSlider" style="width:120px;">
+        <span class="ms-2" id="userSearchSliderValue" style="color:#fff">0</span>
+        <button class="btn btn-primary ms-2" type="button" id="userSearchSliderBtn">Search</button>
+    </div>
+</div>
+<div class="top-aligned-container w-100">
+    <div class="table-responsive mt-3">
+        <table class="table table-bordered table-hover align-middle wider-table table-blue-bg mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Flagged</th>
+                    <th>Registered At</th>
+                    <th>Reservations</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                {% if user.id > 1 %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.role }}</td>
+                    <td>{% if user.flagged %}<span class="badge bg-danger">Yes</span>{% else %}<span
+                            class="badge bg-success">No</span>{% endif %}</td>
+                    <td>{{ user.created_at.strftime('%d-%b-%Y %H:%M') }}</td>
+                    <td>{{ user_stats[user.id].reservations }}</td>
+                    <td>
+                        {% if not user.flagged %}
+                        <button class="btn btn-sm btn-warning action-btn-space"
+                            onclick="flagUser({{ user.id }})">Flag</button>
+                        {% else %}
+                        <button class="btn btn-sm btn-success action-btn-space"
+                            onclick="unflagUser({{ user.id }})">Unflag</button>
+                        {% endif %}
+                        <button class="btn btn-sm btn-secondary action-btn-space"
+                            onclick="showUserDetails({{ user.id }})">User Details</button>
+                        <button class="btn btn-sm btn-info" onclick="showUserHistory({{ user.id }})">View
+                            History</button>
+                    </td>
+                </tr>
+                {% endif %}
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center">No users found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- User History Modal -->
+<div class="modal fade" id="userHistoryModal" tabindex="-1" aria-labelledby="userHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userHistoryModalLabel">User Reservation History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="userHistoryContent">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" aria-labelledby="userDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="margin-top:70px; position:relative;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userDetailsModalLabel">User Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="userDetailsContent">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function flagUser(userId) {
+        fetch(`/admin/users/flag/${userId}`, { method: 'POST' }).then(() => location.reload());
+    }
+    function unflagUser(userId) {
+        fetch(`/admin/users/unflag/${userId}`, { method: 'POST' }).then(() => location.reload());
+    }
+    function showUserHistory(userId) {
+        fetch(`/admin/users/history/${userId}`)
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('userHistoryContent').innerHTML = html;
+                let modalEl = document.getElementById('userHistoryModal');
+                let modal = new bootstrap.Modal(modalEl, { backdrop: false });
+                modal.show();
+                let closeBtn = modalEl.querySelector('.btn-close');
+                closeBtn.onclick = function () {
+                    modal.hide();
+                };
+            });
+    }
+    function showUserDetails(userId) {
+        fetch(`/admin/users/details/${userId}`)
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('userDetailsContent').innerHTML = html;
+                let modalEl = document.getElementById('userDetailsModal');
+                let modal = new bootstrap.Modal(modalEl, { backdrop: false });
+                modal.show();
+                let closeBtn = modalEl.querySelector('.btn-close');
+                closeBtn.onclick = function () {
+                    modal.hide();
+                };
+            });
+    }
+    let userSearchType = 'Name';
+    function setUserSearchType(type) {
+        userSearchType = type;
+        document.getElementById('userSearchTypeLabel').textContent = type;
+        if (type === 'Number of Reservations') {
+            document.getElementById('userSearchInputGroup').classList.add('d-none');
+            document.getElementById('userSearchSliderGroup').classList.remove('d-none');
+        } else {
+            document.getElementById('userSearchInputGroup').classList.remove('d-none');
+            document.getElementById('userSearchSliderGroup').classList.add('d-none');
+            document.getElementById('userSearchInput').placeholder = 'Search users...';
+        }
+        doUserSearch();
+    }
+    function renderUserTable(users) {
+        const tbody = document.querySelector('table tbody');
+        // Filtering out admin 
+        users = users.filter(user => user.id !== 1 && user.role !== 'admin');
+        if (!users.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No users found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = users.map(user => {
+            let reg = '';
+            if (user.created_at) {
+                const d = new Date(user.created_at);
+                reg = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            }
+            return `
+            <tr>
+              <td>${user.id}</td>
+              <td>${user.username}</td>
+              <td>${user.email}</td>
+              <td>user</td>
+              <td>${user.flagged ? '<span class=\"badge bg-danger\">Yes</span>' : '<span class=\"badge bg-success\">No</span>'}</td>
+              <td>${reg}</td>
+              <td>${user.reservations}</td>
+              <td>
+                <button class=\"btn btn-sm btn-warning action-btn-space\" onclick=\"flagUser(${user.id})\">Flag</button>
+                <button class=\"btn btn-sm btn-success action-btn-space\" onclick=\"unflagUser(${user.id})\">Unflag</button>
+                <button class=\"btn btn-sm btn-secondary action-btn-space\" onclick=\"showUserDetails(${user.id})\">User Details</button>
+                <button class=\"btn btn-sm btn-info\" onclick=\"showUserHistory(${user.id})\">View History</button>
+              </td>
+            </tr>
+            `;
+        }).join('');
+    }
+    function doUserSearch() {
+        let type = userSearchType;
+        let q = '';
+        let min = '';
+        let max = '';
+        if (type === 'Number of Reservations') {
+            min = 0;
+            max = document.getElementById('userSearchSlider').value;
+        } else {
+            q = document.getElementById('userSearchInput').value.trim();
+        }
+        const params = new URLSearchParams();
+        params.append('type', type);
+        if (type === 'Number of Reservations') {
+            params.append('min', min);
+            params.append('max', max);
+        } else {
+            params.append('q', q);
+        }
+        fetch('/admin/search/users?' + params.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    renderUserTable([]);
+                    return;
+                }
+                renderUserTable(data);
+            })
+            .catch(() => renderUserTable([]));
+    }
+    document.getElementById('userSearchInput').addEventListener('input', function () {
+        doUserSearch();
+    });
+    document.getElementById('userSearchBtn').onclick = function () {
+        doUserSearch();
+    };
+    document.getElementById('userSearchSlider').addEventListener('input', function () {
+        document.getElementById('userSearchSliderValue').textContent = this.value;
+        doUserSearch();
+    });
+    document.getElementById('userSearchSliderBtn').onclick = function () {
+        doUserSearch();
+    };
+</script>
+{% endblock %}

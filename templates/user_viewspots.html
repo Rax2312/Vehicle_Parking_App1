@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    #userSpotsModal .modal-header {
+        background: #000 !important;
+        border-top: 6px solid #000 !important;
+        border-radius: 1rem 1rem 0 0;
+        margin-top: 4rem;
+        padding-top: 2.2rem;
+        padding-bottom: 1.2rem;
+    }
+
+    #userSpotsModal .modal-title {
+        text-align: center;
+        width: 100%;
+        color: #fff !important;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    #userSpotsModal .btn-close {
+        filter: invert(1);
+    }
+</style>
+<h2 class="admin-dashboard-heading" style="margin-top:3.2rem; margin-bottom:1.2rem; text-align:center;">View All Parking
+    Lots</h2>
+<div class="d-flex justify-content-center align-items-center mb-4" style="gap:1rem;">
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="lotSearchTypeDropdown"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            <span id="lotSearchTypeLabel">Name</span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="lotSearchTypeDropdown">
+            <li><a class="dropdown-item" href="#" onclick="setLotSearchType('Name')">Name</a></li>
+            <li><a class="dropdown-item" href="#" onclick="setLotSearchType('Address')">Address</a></li>
+            <li><a class="dropdown-item" href="#" onclick="setLotSearchType('Price per Hour')">Price per Hour</a></li>
+        </ul>
+    </div>
+    <div id="lotSearchInputGroup" class="input-group" style="max-width: 320px;">
+        <input type="text" class="form-control" id="lotSearchInput" placeholder="Search lots..." autocomplete="off">
+        <button class="btn btn-primary" type="button" id="lotSearchBtn">Search</button>
+    </div>
+    <div id="lotSearchSliderGroup" class="d-none align-items-center" style="min-width:220px;">
+        <span class="me-2" style="color:#fff">0</span>
+        <input type="range" class="form-range" min="0" max="200" value="0" id="lotSearchSlider" style="width:120px;">
+        <span class="ms-2" id="lotSearchSliderValue" style="color:#fff">0</span>
+        <button class="btn btn-primary ms-2" type="button" id="lotSearchSliderBtn">Search</button>
+    </div>
+</div>
+<div class="d-flex justify-content-center align-items-center" style="min-height:60vh;" id="lotCardsContainer">
+</div>
+
+<div class="modal fade" id="userSpotsModal" tabindex="-1" aria-labelledby="userSpotsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userSpotsModalLabel">Parking Spots for <span id="userModalLotName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary" id="userPrevSpotsBtn"
+                        onclick="userChangeSpotsPage(-1)">Previous</button>
+                    <span id="userSpotsPageInfo"></span>
+                    <button class="btn btn-outline-secondary" id="userNextSpotsBtn"
+                        onclick="userChangeSpotsPage(1)">Next</button>
+                </div>
+                <div id="userSpotsGrid" class="d-flex flex-wrap gap-2 justify-content-center"></div>
+                <div class="mt-4">
+                    <strong>Status:</strong>
+                    <span class="badge border border-success text-success" style="border-width:2px !important;">Green
+                        border = Available</span>
+                    <span class="badge border border-danger text-danger ms-2" style="border-width:2px !important;">Red
+                        border = Occupied</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var allSpots = {{ spots_by_lot_id | tojson }};
+    var lotsData = {{ lots_data | tojson }};
+    var userCurrentLotId = null;
+    var userCurrentSpotsPage = 1;
+    var userSpotsPerPage = 100;
+    function showUserSpotsModal(lotId) {
+        userCurrentLotId = lotId;
+        userCurrentSpotsPage = 1;
+        var lot = lotsData.find(l => l.id == lotId);
+        document.getElementById('userModalLotName').textContent = lot ? lot.prime_location_name : '';
+        renderUserSpotsGrid();
+        var modalEl = document.getElementById('userSpotsModal');
+        var modal = new bootstrap.Modal(modalEl, { backdrop: false });
+        modal.show();
+        var closeBtn = modalEl.querySelector('.btn-close');
+        closeBtn.onclick = function () {
+            modal.hide();
+        };
+    }
+    function renderUserSpotsGrid() {
+        var grid = document.getElementById('userSpotsGrid');
+        grid.innerHTML = '';
+        var spots = allSpots[userCurrentLotId] || [];
+        var start = (userCurrentSpotsPage - 1) * userSpotsPerPage;
+        var end = Math.min(start + userSpotsPerPage, spots.length);
+        for (var i = start; i < end; i++) {
+            var spot = spots[i];
+            var box = document.createElement('div');
+            box.className = 'border border-2 rounded fw-bold d-flex align-items-center justify-content-center';
+            box.style.width = '48px';
+            box.style.height = '48px';
+            box.style.fontSize = '1.2rem';
+            if (spot.is_occupied) {
+                box.classList.add('border-danger', 'text-danger');
+            } else {
+                box.classList.add('border-success', 'text-success');
+            }
+            box.textContent = spot.spot_number;
+            grid.appendChild(box);
+        }
+        var totalPages = Math.ceil(spots.length / userSpotsPerPage) || 1;
+        document.getElementById('userSpotsPageInfo').textContent = 'Page ' + userCurrentSpotsPage + ' of ' + totalPages;
+        document.getElementById('userPrevSpotsBtn').disabled = userCurrentSpotsPage === 1;
+        document.getElementById('userNextSpotsBtn').disabled = userCurrentSpotsPage === totalPages;
+    }
+    function userChangeSpotsPage(delta) {
+        var spots = allSpots[userCurrentLotId] || [];
+        var totalPages = Math.ceil(spots.length / userSpotsPerPage) || 1;
+        userCurrentSpotsPage += delta;
+        if (userCurrentSpotsPage < 1) userCurrentSpotsPage = 1;
+        if (userCurrentSpotsPage > totalPages) userCurrentSpotsPage = totalPages;
+        renderUserSpotsGrid();
+    }
+</script>
+<script>
+    var lotsData = {{ lots_data | tojson }};
+    let lotSearchType = 'Name';
+    function setLotSearchType(type) {
+        lotSearchType = type;
+        document.getElementById('lotSearchTypeLabel').textContent = type;
+        if (type === 'Price per Hour') {
+            document.getElementById('lotSearchInputGroup').classList.add('d-none');
+            document.getElementById('lotSearchSliderGroup').classList.remove('d-none');
+        } else {
+            document.getElementById('lotSearchInputGroup').classList.remove('d-none');
+            document.getElementById('lotSearchSliderGroup').classList.add('d-none');
+            document.getElementById('lotSearchInput').placeholder = 'Search lots...';
+        }
+        doLotSearch();
+    }
+    function renderLotCards(lots) {
+        const container = document.getElementById('lotCardsContainer');
+        if (!lots.length) {
+            container.innerHTML = '<div class="text-center w-100">No parking lots found.</div>';
+            return;
+        }
+        container.innerHTML = lots.map(lot => `
+    <div class='card shadow-lg p-4 mb-4' style='background:rgba(200,240,255,0.85); max-width:600px; min-width:350px;'>
+      <div class='text-center mb-3'>
+        <div class='fs-3 text-secondary'>${lot.prime_location_name}</div>
+        <div class='fw-bold mt-2'>Name: <span class='fw-normal'>${lot.prime_location_name}</span></div>
+        <div class='fw-bold'>Address: <span class='fw-normal'>${lot.address}</span></div>
+        <div class='fw-bold'>Price: <span class='fw-normal'>₹${lot.price_per_hour}/hr</span></div>
+        <div class='fw-bold'>Spots: <span class='fw-normal'>${lot.available_spots} available / ${lot.total_spots} total</span></div>
+      </div>
+      <div class='d-flex justify-content-center'>
+        <button class='btn btn-dark btn-lg px-5 shadow' data-bs-target='#userSpotsModal' onclick='showUserSpotsModal(${lot.id})'>View Spots</button>
+      </div>
+    </div>
+  `).join('');
+    }
+    function doLotSearch() {
+        let type = lotSearchType;
+        let q = '';
+        let val = '';
+        if (type === 'Price per Hour') {
+            val = document.getElementById('lotSearchSlider').value;
+        } else {
+            q = document.getElementById('lotSearchInput').value.trim().toLowerCase();
+        }
+        let filtered = lotsData.filter(lot => {
+            if (type === 'Name') return lot.prime_location_name.toLowerCase().includes(q);
+            if (type === 'Address') return lot.address.toLowerCase().includes(q);
+            if (type === 'Price per Hour') return lot.price_per_hour && Number(lot.price_per_hour) <= Number(val);
+            return true;
+        });
+        renderLotCards(filtered);
+    }
+    document.getElementById('lotSearchInput').addEventListener('input', function () {
+        doLotSearch();
+    });
+    document.getElementById('lotSearchBtn').onclick = function () {
+        doLotSearch();
+    };
+    document.getElementById('lotSearchSlider').addEventListener('input', function () {
+        document.getElementById('lotSearchSliderValue').textContent = this.value;
+        doLotSearch();
+    });
+    document.getElementById('lotSearchSliderBtn').onclick = function () {
+        doLotSearch();
+    };
+    window.addEventListener('DOMContentLoaded', function () {
+        renderLotCards(lotsData);
+    });
+</script>
+<script>
+    // modal openers
+    window.addEventListener('DOMContentLoaded', function () {
+        {% for lot in lots %}
+        var btn = document.querySelector('[data-bs-target="#lotModal{{ lot.id }}"]');
+        if (btn) {
+            btn.setAttribute('data-bs-target', '#userSpotsModal');
+            btn.onclick = function () { showUserSpotsModal({{ lot.id }}); };
+    }
+    {% endfor %}
+});
+</script>
+<div class="text-center">
+    <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-primary btn-lg px-5"
+        style="position:fixed; left:50%; transform:translateX(-50%); bottom:2rem; z-index:1000;">Back to Dashboard</a>
+</div>
+{% endblock %}

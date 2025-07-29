@@ -1,0 +1,457 @@
+{% extends 'base.html' %}
+{% block title %}Parking Spot Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center" style="width:100%;">
+    <a class="back-btn" href="{{ url_for('admin.dashboard') }}"
+        style="position:relative;top:0;left:0;margin-top:2rem;margin-bottom:0.2rem;">&#8592; Back</a>
+</div>
+<h2 class="management-heading" style="text-align:center;">Parking Spot Management</h2>
+<div class="mb-2 management-subheading">View Parking Spots by Lot</div>
+<!-- Admin Search Bar -->
+<div class="d-flex justify-content-center" style="width:100%;">
+    <div class="searchbar-outer-box" style="background:rgba(255,255,255,0);margin-bottom:0.5rem;display:inline-block;">
+        <div class="centered-searchbar-row">
+            <div class="dropdown" style="min-width: 180px;">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="searchTypeDropdown"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span id="searchTypeLabel">Parking Lots</span>
+                </button>
+                <ul class="dropdown-menu w-100" aria-labelledby="searchTypeDropdown">
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('Parking Lots')">Parking Lots</a></li>
+                    <li><a class="dropdown-item" href="#"
+                            onclick="setSearchType('Parking Spots (Available/Occupied)')">Parking Spots
+                            (Available/Occupied)</a></li>
+                </ul>
+            </div>
+            <div class="input-group" style="max-width: 450px;">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search..." aria-label="Search..."
+                    autocomplete="off">
+                <button class="btn btn-primary" type="button" id="searchBtn"><i
+                        class="bi bi-search me-1"></i>Search</button>
+                <button class="btn btn-outline-secondary d-none" type="button" id="clearSearchBtn"><i
+                        class="bi bi-x"></i></button>
+            </div>
+        </div>
+        <div id="searchResultsContainer" class="search-popup w-100"
+            style="margin-top:0 !important; margin-bottom:0 !important; padding:0; background:transparent; min-height:0; max-height:none; border:none; box-shadow:none; position:static; display:none;">
+        </div>
+    </div>
+</div>
+
+<style>
+    .searchbar-outer-box {
+        width: 100%;
+        background: rgba(255, 255, 255, 0);
+        margin-bottom: 0.5rem !important;
+        padding: 0;
+    }
+
+    #searchResultsContainer.search-popup {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        position: static !important;
+        display: none;
+        transition: none;
+        z-index: auto;
+    }
+
+    #searchResultsContainer.search-popup.show {
+        display: block !important;
+    }
+
+    .search-results-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1.5rem;
+        margin: 0;
+        padding: 0;
+    }
+
+    .search-result-card {
+        min-width: 270px;
+        max-width: 350px;
+        margin-bottom: 0;
+        margin-left: 0;
+        margin-right: 0;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        opacity: 0;
+        transform: translateY(-10px);
+        animation: fadeInPop 0.25s forwards;
+    }
+
+    @keyframes fadeInPop {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .top-aligned-container {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .top-aligned-container .row {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    @media (max-width: 900px) {
+        .search-results-row {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .search-result-card {
+            min-width: 90vw;
+            max-width: 98vw;
+        }
+
+        .input-group.flex-grow-1 {
+            max-width: 100vw !important;
+        }
+    }
+</style>
+<div class="top-aligned-container w-100">
+    <div class="row g-4 justify-content-center align-items-stretch">
+        {% for lot in lots %}
+        <div class="col-md-4 d-flex align-items-stretch">
+            <div class="card shadow-sm admin-card text-center w-100 alert alert-info" style="min-height:unset;">
+                <div class="card-body p-4"
+                    style="height:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;">
+                    <h5 class="card-title mb-2">{{ lot.prime_location_name }}</h5>
+                    <p class="card-text mb-2"><strong>Name:</strong> {{ lot.prime_location_name
+                        }}<br><strong>Address:</strong> {{ lot.address }}<br><strong>Price:</strong> ₹{{ lot.price }}
+                        /hr<br><strong>Spots:</strong> {{ lot.number_of_spots }}</p>
+                    <button class="btn btn-primary w-100 mt-2" style="max-width:220px;"
+                        onclick="showSpotsModal({{ lot.id }})">View Spots</button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center">No parking lots found.</div>
+        {% endfor %}
+    </div>
+</div>
+<!-- Spots Modal -->
+<div class="modal fade" id="spotsModal" tabindex="-1" aria-labelledby="spotsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="spotsModalLabel">Parking Spots for <span id="modalLotName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary" id="prevSpotsBtn"
+                        onclick="changeSpotsPage(-1)">Previous</button>
+                    <span id="spotsPageInfo"></span>
+                    <button class="btn btn-outline-secondary" id="nextSpotsBtn"
+                        onclick="changeSpotsPage(1)">Next</button>
+                </div>
+                <div id="spotsGrid" class="d-flex flex-wrap gap-2 justify-content-center"></div>
+                <div class="mt-4">
+                    <strong>Status:</strong>
+                    <span class="badge border border-success text-success" style="border-width:2px !important;">Green
+                        border = Available</span>
+                    <span class="badge border border-danger text-danger ms-2" style="border-width:2px !important;">Red
+                        border = Occupied</span>
+                    <div class="mt-2 text-muted" style="font-size:1rem;">Click on an occupied (red) box to view
+                        reservation details.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- When pressed on occupied spot, reservation details displayed -->
+<div class="modal fade" id="spotUserModal" tabindex="-1" aria-labelledby="spotUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" style="margin-top: 13vh !important;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="spotUserModalLabel">Spot Reservation Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="spotUserModalBody">
+            </div>
+            <div class="d-flex justify-content-center mb-3">
+                <button id="customCloseBtn" class="btn"
+                    style="background:#000;color:#fff;font-weight:bold;padding:0.6em 2.5em;font-size:1.1em;border-radius:0.5em;"
+                    onclick="var modalEl = document.getElementById('spotUserModal'); var modal = bootstrap.Modal.getInstance(modalEl); if(modal){modal.hide();}">CLOSE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reservationModal" tabindex="-1" aria-labelledby="reservationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reservationModalLabel">Reservation Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="reservationDetails">
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    console.log("JS loaded!");
+    var allSpots = {{ spots_by_lot_id | tojson }};
+    console.log("allSpots =", allSpots);
+    var lotsData = {{ lots_data | tojson }};
+    console.log("lotsData =", lotsData);
+
+    var currentLotId = null;
+    var currentSpotsPage = 1;
+    var spotsPerPage = 100;
+
+    function showSpotsModal(lotId) {
+        currentLotId = lotId;
+        currentSpotsPage = 1;
+        var lot = lotsData.find(l => l.id == lotId);
+        document.getElementById('modalLotName').textContent = lot ? lot.prime_location_name : '';
+        renderSpotsGrid();
+        var modalEl = document.getElementById('spotsModal');
+        var modal = new bootstrap.Modal(modalEl, { backdrop: false });
+        modal.show();
+        var closeBtn = modalEl.querySelector('.btn-close');
+        closeBtn.onclick = function () {
+            modal.hide();
+        };
+    }
+    function renderSpotsGrid() {
+        var grid = document.getElementById('spotsGrid');
+        grid.innerHTML = '';
+        var spots = allSpots[currentLotId] || [];
+        spots = spots.slice().sort(function (a, b) { return a.spot_number - b.spot_number; });
+        var start = (currentSpotsPage - 1) * spotsPerPage;
+        var end = Math.min(start + spotsPerPage, spots.length);
+        for (var i = start; i < end; i++) {
+            var spot = spots[i];
+            var box = document.createElement('div');
+            box.className = 'border border-2 rounded fw-bold d-flex align-items-center justify-content-center';
+            box.style.width = '48px';
+            box.style.height = '48px';
+            box.style.fontSize = '1.2rem';
+            box.textContent = spot.spot_number;
+            if (spot.is_occupied) {
+                box.classList.add('border-danger', 'text-danger');
+                box.style.cursor = 'pointer';
+                // spot_number by iife
+                (function (lotId, spotNumber) {
+                    box.onclick = function () { showSpotUserModal(lotId, spotNumber); };
+                })(currentLotId, spot.spot_number);
+            } else {
+                box.classList.add('border-success', 'text-success');
+            }
+            grid.appendChild(box);
+        }
+        var totalPages = Math.ceil(spots.length / spotsPerPage) || 1;
+        document.getElementById('spotsPageInfo').textContent = 'Page ' + currentSpotsPage + ' of ' + totalPages;
+        document.getElementById('prevSpotsBtn').disabled = currentSpotsPage === 1;
+        document.getElementById('nextSpotsBtn').disabled = currentSpotsPage === totalPages;
+    }
+    function changeSpotsPage(delta) {
+        var spots = allSpots[currentLotId] || [];
+        var totalPages = Math.ceil(spots.length / spotsPerPage) || 1;
+        currentSpotsPage += delta;
+        if (currentSpotsPage < 1) currentSpotsPage = 1;
+        if (currentSpotsPage > totalPages) currentSpotsPage = totalPages;
+        renderSpotsGrid();
+    }
+    // Show user details for a spot
+    function showSpotUserModal(lotId, spotNumber) {
+        console.log('showSpotUserModal called with lotId:', lotId, 'spotNumber:', spotNumber);
+        fetch(`/admin/spot_reservation_details/${lotId}/${spotNumber}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Data received from backend:', data);
+                var html = '';
+                if (data.success) {
+                    html += '<div class="row"><div class="col-6"><b>Spot Number:</b> ' + data.spot_number + '</div>';
+                    html += '<div class="col-6"><b>User ID:</b> ' + data.user_id + '</div></div>';
+                    html += '<div class="row"><div class="col-6"><b>User Name:</b> ' + data.user_name + '</div>';
+                    html += '<div class="col-6"><b>Vehicle Number:</b> ' + data.vehicle_number + '</div></div>';
+                    html += '<div class="row"><div class="col-6"><b>Phone Number:</b> ' + data.phone_number + '</div>';
+                    html += '<div class="col-6"><b>Hours Parked:</b> ' + data.hours_parked + '</div></div>';
+                    html += '<div class="row"><div class="col-6"><b>Revenue:</b> ₹' + data.revenue + '</div>';
+                    html += '<div class="col-6"><b>Status:</b> ' + data.status + '</div></div>';
+                    html += '<div class="row"><div class="col-12"><b>Reservation ID:</b> ' + data.reservation_id + '</div></div>';
+                } else {
+                    html = '<div class="text-danger">' + (data.error || 'No reservation found for this spot.') + '</div>';
+                }
+                document.getElementById('spotUserModalBody').innerHTML = html;
+                var modalEl = document.getElementById('spotUserModal');
+                var modal = new bootstrap.Modal(modalEl, { backdrop: false });
+                modal.show();
+                var closeBtn = modalEl.querySelector('.btn-close');
+                closeBtn.onclick = function () { modal.hide(); };
+            });
+    }
+    // --- Admin Search Bar js ---
+    let searchDebounce;
+    let lastSearchValue = '';
+    let selectedSearchType = 'Parking Lots';
+    function setSearchType(type) {
+        selectedSearchType = type;
+        document.getElementById('searchTypeLabel').textContent = type;
+        document.getElementById('searchInput').focus();
+        doLiveSearch();
+    }
+    document.getElementById('searchInput').addEventListener('input', function () {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(doLiveSearch, 200);
+    });
+    document.getElementById('searchBtn').onclick = doLiveSearch;
+    document.getElementById('clearSearchBtn').onclick = clearAdminSearch;
+    function doLiveSearch() {
+        var query = document.getElementById('searchInput').value.trim();
+        var resultsContainer = document.getElementById('searchResultsContainer');
+        if (!selectedSearchType || !query) {
+            resultsContainer.innerHTML = '';
+            resultsContainer.classList.remove('show');
+            resultsContainer.style.display = 'none';
+            return;
+        }
+        resultsContainer.innerHTML = '<div class="text-center text-muted py-2"><div class="spinner-border text-primary" role="status" style="width:1.5rem;height:1.5rem;"></div></div>';
+        resultsContainer.classList.add('show');
+        resultsContainer.style.display = 'block';
+        var endpoint = '';
+        var params = new URLSearchParams({ q: query });
+        if (selectedSearchType === 'Parking Lots') endpoint = '/admin/search/parking-lots';
+        else if (selectedSearchType === 'Parking Spots (Available/Occupied)') endpoint = '/admin/search/parking-spots';
+        fetch(endpoint + '?' + params, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    resultsContainer.innerHTML = '<div class="alert alert-danger">' + data.error + '</div>';
+                    return;
+                }
+                if (!Array.isArray(data) || data.length === 0) {
+                    resultsContainer.innerHTML = '<div class="alert alert-info">No results found for "' + query + '".</div>';
+                    return;
+                }
+                // Render results
+                if (selectedSearchType === 'Parking Lots') {
+                    resultsContainer.innerHTML = `<div class='search-results-row'>` + data.map(lot => `
+              <div class='card search-result-card mb-2'>
+                <div class='card-body'>
+                  <h5 class='card-title mb-2'>${lot.name}</h5>
+                  <p class='card-text mb-2'><strong>Address:</strong> ${lot.address}<br><strong>Pin Code:</strong> ${lot.pin_code}<br><strong>Spots:</strong> ${lot.total_spots}<br><strong>Occupied:</strong> ${lot.occupied}</p>
+                  <span class='badge bg-primary mb-2'>₹${lot.price_per_hour}/hr</span>
+                </div>
+              </div>
+            `).join('') + `</div>`;
+                } else if (selectedSearchType === 'Parking Spots (Available/Occupied)') {
+                    // If query contains 'available' or 'occupied', filter accordingly
+                    let status = '';
+                    let q = query.toLowerCase();
+                    if (q.includes('available')) status = 'available';
+                    else if (q.includes('occupied')) status = 'occupied';                   
+                    if (status) {
+                        // Group by lot
+                        let lots = {};
+                        data.forEach(spot => {
+                            if (!lots[spot.lot_id]) lots[spot.lot_id] = { name: spot.lot_name, address: spot.lot_address, total: 0, available: 0, occupied: 0 };
+                            lots[spot.lot_id].total++;
+                            if (spot.is_occupied) lots[spot.lot_id].occupied++;
+                            else lots[spot.lot_id].available++;
+                        });
+                        let filtered = Object.values(lots).filter(lot => status === 'available' ? lot.available > 0 : lot.occupied > 0);
+                        if (filtered.length === 0) {
+                            resultsContainer.innerHTML = '<div class="alert alert-info">No lots found with ' + status + ' spots.</div>';
+                            return;
+                        }
+                        resultsContainer.innerHTML = `<div class='search-results-row'>` + filtered.map(lot => `
+                <div class='card search-result-card mb-2'>
+                  <div class='card-body'>
+                    <h5 class='card-title mb-2'>${lot.name}</h5>
+                    <p class='card-text mb-2'><strong>Address:</strong> ${lot.address}<br><strong>Available:</strong> ${lot.available}<br><strong>Occupied:</strong> ${lot.occupied}</p>
+                  </div>
+                </div>
+              `).join('') + `</div>`;
+                    } else {
+                        resultsContainer.innerHTML = `<div class='table-responsive'><table class='table table-bordered table-hover'><thead class='table-light'><tr><th>Spot #</th><th>Lot</th><th>Address</th><th>Status</th><th>Floor</th></tr></thead><tbody>` + data.map(spot => `
+                <tr>
+                  <td>${spot.spot_number}</td>
+                  <td>${spot.lot_name}</td>
+                  <td>${spot.lot_address}</td>
+                  <td><span class='badge ${spot.status === 'A' ? 'bg-success' : 'bg-warning'}'>${spot.status === 'A' ? 'Available' : 'Occupied'}</span></td>
+                  <td>${spot.floor}</td>
+                </tr>
+              `).join('') + '</tbody></table></div>';
+                    }
+                }
+            })
+            .catch(err => {
+                resultsContainer.innerHTML = '<div class="alert alert-danger">Error performing search.</div>';
+            });
+    }
+    function clearAdminSearch() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchResultsContainer').innerHTML = '';
+        document.getElementById('searchResultsContainer').classList.remove('show');
+        document.getElementById('searchResultsContainer').style.display = 'none';
+        document.getElementById('clearSearchBtn').classList.add('d-none');
+    }
+</script>
+<pre id="debug-js" style="display:none;">allSpots = {{ spots_by_lot_id | tojson }}
+lotsData = {{ lots_data | tojson }}
+</pre>
+<style>
+    #spotsModal .modal-dialog {
+        margin-top: 13vh !important;
+        display: flex;
+        align-items: flex-start;
+        min-height: calc(100vh - 2rem);
+    }
+
+    #spotsModal .modal-content {
+        border-radius: 1rem;
+        padding-top: 0.5rem;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    #spotsModal .modal-header {
+        border-bottom: 1px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        background: #000 !important;
+        z-index: 20;
+        border-top: 6px solid #000 !important;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    #spotsModal .modal-title {
+        text-align: center;
+        width: 100%;
+        color: #fff !important;
+    }
+
+    #spotsModal .btn-close {
+        z-index: 30;
+        filter: invert(1);
+    }
+
+    #spotUserModal .modal-content {
+        background: #f7b08c !important;
+    }
+
+    #spotUserModal .modal-title {
+        text-align: center;
+        width: 100%;
+        font-weight: 800;
+        font-size: 2rem;
+    }
+</style>
+{% endblock %}

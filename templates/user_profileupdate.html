@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="admin-dashboard-heading" style="margin-top:3.2rem; margin-bottom:1.2rem; text-align:center;">Profile Details
+</h2>
+<div class="card shadow-lg p-4 mb-4 mx-auto" style="max-width:700px; min-width:350px;">
+    <div class="card-header bg-primary text-white text-center fs-4 mb-3">Update Profile</div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('user.update_profile') }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="first_name">First Name</label>
+                        <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}"
+                            required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="last_name">Last Name</label>
+                        <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="phone_number">Phone Number</label>
+                        <input type="text" class="form-control" name="phone_number" value="{{ user.phone_number }}"
+                            required>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <input type="text" class="form-control" name="address" value="{{ user.address }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" min="0" class="form-control" name="age" value="{{ user.age }}">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Update Profile</button>
+        </form>
+    </div>
+</div>
+<div class="card shadow-lg p-4 mb-4 mx-auto" style="max-width:700px; min-width:350px;">
+    <div class="card-header bg-warning text-white text-center fs-4 mb-3">Change Password</div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('user.change_password') }}">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="current_password">Current Password</label>
+                        <input type="password" class="form-control" name="current_password" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="new_password">New Password</label>
+                        <input type="password" class="form-control" name="new_password" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" required>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-warning mt-3">Change Password</button>
+        </form>
+    </div>
+</div>
+<div class="text-center mt-4">
+    <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-primary btn-lg px-5">Back to Dashboard</a>
+</div>
+{% endblock %}

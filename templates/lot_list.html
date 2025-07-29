@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Parking Lot Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center" style="width:100%;">
+    <a class="back-btn" href="{{ url_for('admin.dashboard') }}"
+        style="position:relative;top:0;left:0;margin-top:2rem;margin-bottom:0.2rem;">&#8592; Back</a>
+</div>
+<h2 class="management-heading" style="text-align:center;">Parking Lot Management</h2>
+<div class="mb-2 management-subheading">Add New Parking Lot</div>
+<div class="top-aligned-container w-100">
+    <div class="mb-3"></div>
+    <form method="POST" class="row g-2 align-items-end mb-4">
+        <div class="col-md-3">
+            <input type="text" name="prime_location_name" class="form-control" placeholder="Location Name" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="price" class="form-control" placeholder="Price" step="1" required>
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="address" class="form-control" placeholder="Address" required>
+        </div>
+        <div class="col-md-2">
+            <input type="text" name="pin_code" class="form-control" placeholder="Pin Code" required>
+        </div>
+        <div class="col-md-1">
+            <input type="number" name="number_of_spots" class="form-control" placeholder="# Spots" required>
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-success w-100">Add</button>
+        </div>
+    </form>
+    <div class="table-responsive mt-5">
+        <table class="table table-bordered table-hover align-middle bg-white wider-table">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Location Name</th>
+                    <th>Price</th>
+                    <th>Address</th>
+                    <th>Pin Code</th>
+                    <th># Spots</th>
+                    <th>Occupied</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lot in lots %}
+                <tr>
+                    <td>{{ lot.id }}</td>
+                    <td>{{ lot.prime_location_name }}</td>
+                    <td>{{ lot.price }}</td>
+                    <td>{{ lot.address }}</td>
+                    <td>{{ lot.pin_code }}</td>
+                    <td>{{ lot.number_of_spots }}</td>
+                    <td>{{ lot.occupied }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_lot', lot_id=lot.id) }}"
+                            class="btn btn-sm btn-primary action-btn-space">Edit</a>
+                        <form method="POST" action="{{ url_for('admin.delete_lot', lot_id=lot.id) }}"
+                            style="display:inline-block;" onsubmit="return confirm('Delete this lot?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center">No parking lots found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

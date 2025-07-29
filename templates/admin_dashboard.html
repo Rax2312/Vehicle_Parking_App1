@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 border-primary mb-4 text-center"
+        style="max-width:500px; margin:0 auto 1.5rem auto; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <h2 class="text-primary mb-2" style="font-size:2rem;">Admin Dashboard</h2>
+        <p class="mb-0 fs-5">Welcome, {{ admin.first_name or admin.username or admin.email }}!</p>
+    </div>
+    <div class="row justify-content-center gx-4 gy-4">
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-4 d-flex align-items-stretch">
+            <div class="card shadow-sm border-info w-100 text-center p-3 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="card-title text-primary">Parking Lots</h5>
+                    <p class="card-text mb-3">Manage all parking lots, add or edit lot details.</p>
+                </div>
+                <a href="{{ url_for('admin.lot_list') }}" class="btn btn-info w-100 mt-auto">Manage Lots</a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-4 d-flex align-items-stretch">
+            <div class="card shadow-sm border-success w-100 text-center p-3 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="card-title text-success">Parking Spots</h5>
+                    <p class="card-text mb-3">View and manage parking spots for each lot.</p>
+                </div>
+                <a href="{{ url_for('admin.spot_list') }}" class="btn btn-success w-100 mt-auto">Manage Spots</a>
+            </div>
+        </div>
+        <!-- User Details-->
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-4 d-flex align-items-stretch">
+            <div class="card shadow-sm border-warning w-100 text-center p-3 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="card-title text-warning">User Details</h5>
+                    <p class="card-text mb-3">Search users by username, name, age, phone, or address in the user
+                        management page.</p>
+                </div>
+                <a href="{{ url_for('admin.user_list') }}" class="btn btn-warning w-100 mt-auto">View All Users</a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-4 d-flex align-items-stretch">
+            <div class="card shadow-sm border-primary w-100 text-center p-3 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="card-title text-primary">Reservations</h5>
+                    <p class="card-text mb-3">View all parking reservations and history.</p>
+                </div>
+                <a href="{{ url_for('admin.reservation_list') }}" class="btn btn-primary w-100 mt-auto">View
+                    Reservations</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Chart -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6 text-center" style="margin-right: 15px;">
+            <div class="summary-icon mb-3">
+                <i class="fas fa-chart-pie" style="font-size: 3rem; color: #007bff; margin-left: 8px;"></i>
+            </div>
+            <a href="{{ url_for('admin.summary') }}" class="btn summary-btn"
+                style="background: #007bff; border: 2px solid #007bff; color: white; padding: 0.8rem 2.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3); margin-right: 4px;">
+                <i class="fas fa-chart-bar me-2"></i>View Summary Charts
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .summary-btn:hover {
+        background: #0056b3 !important;
+        border-color: #0056b3 !important;
+        color: white !important;
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4) !important;
+        transform: translateY(-2px);
+    }
+
+    .user-search-popup {
+        background: #181f2a;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+        padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+        margin: 0;
+        min-height: 0;
+        max-height: 350px;
+        overflow-y: auto;
+        display: none;
+        transition: none;
+    }
+
+    .user-search-popup.show {
+        display: block !important;
+    }
+</style>
+<script>
+    let userSearchDebounce;
+    document.getElementById('userSearchInput').addEventListener('input', function () {
+        clearTimeout(userSearchDebounce);
+        userSearchDebounce = setTimeout(doUserLiveSearch, 200);
+    });
+    document.getElementById('userSearchBtn').onclick = doUserLiveSearch;
+    function doUserLiveSearch() {
+        var query = document.getElementById('userSearchInput').value.trim();
+        var resultsContainer = document.getElementById('userSearchResults');
+        if (!query) {
+            resultsContainer.innerHTML = '';
+            resultsContainer.classList.remove('show');
+            resultsContainer.style.display = 'none';
+            return;
+        }
+        resultsContainer.innerHTML = '<div class="text-center text-muted py-2"><div class="spinner-border text-primary" role="status" style="width:1.5rem;height:1.5rem;"></div></div>';
+        resultsContainer.classList.add('show');
+        resultsContainer.style.display = 'block';
+        var endpoint = '/admin/search/users';
+        var params = new URLSearchParams({ q: query });
+        fetch(endpoint + '?' + params, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    resultsContainer.innerHTML = '<div class="alert alert-danger">' + data.error + '</div>';
+                    return;
+                }
+                if (!Array.isArray(data) || data.length === 0) {
+                    resultsContainer.innerHTML = '<div class="alert alert-info">No users found for "' + query + '".</div>';
+                    return;
+                }
+                resultsContainer.innerHTML = `<div class='table-responsive'><table class='table table-bordered table-hover'><thead class='table-light'><tr><th>Name</th><th>Username</th><th>Age</th><th>Phone</th><th>Address</th></tr></thead><tbody>` + data.map(user => `
+        <tr>
+          <td>${user.first_name} ${user.last_name}</td>
+          <td>${user.username}</td>
+          <td>${user.age || ''}</td>
+          <td>${user.phone_number}</td>
+          <td>${user.address || ''}</td>
+        </tr>
+      `).join('') + '</tbody></table></div>';
+            })
+            .catch(err => {
+                resultsContainer.innerHTML = '<div class="alert alert-danger">Error performing search.</div>';
+            });
+    }
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

@@ -1,0 +1,42 @@
+<div>
+    <h5 class="text-center">{{ user.id }}. {{ user.first_name or '' }} {{ user.last_name or '' }}</h5>
+    <div class="table-responsive mt-3">
+        <table class="table table-bordered table-hover align-middle wider-table table-blue-bg mb-0"
+            id="userHistoryTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Parking Lot</th>
+                    <th>Spot Number</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Hours Parked</th>
+                    <th>Revenue (₹)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reservations %}
+                <tr>
+                    <td>{{ r.lot_name }}</td>
+                    <td>{{ r.spot_number }}</td>
+                    <td>{{ r.date }}</td>
+                    <td>{{ r.time }}</td>
+                    <td>{{ r.hours_parked }}</td>
+                    <td>{{ r.revenue }}</td>
+                    <td>
+                        {% if r.status == 'Active' %}
+                        <span class="badge bg-primary">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Released</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No reservations found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

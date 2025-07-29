@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}Admin Summary{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 border-primary mb-4 text-center"
+        style="max-width:600px; margin:0 auto 1.5rem auto; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <h2 class="text-primary mb-2" style="font-size:2rem;">Admin Summary Dashboard</h2>
+        <p class="mb-0 fs-5">Welcome, {{ admin.first_name or admin.username or admin.email }}!</p>
+    </div>
+
+    <div class="row justify-content-center gx-4 gy-4 mb-5">
+        <div class="col-3 mb-4">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <h5 class="card-title text-info">Total Lots</h5>
+                    <h2 class="text-info">{{ total_lots }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-3 mb-4">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Total Spots</h5>
+                    <h2 class="text-success">{{ total_spots }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-3 mb-4">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">Total Users</h5>
+                    <h2 class="text-warning">{{ total_users }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-3 mb-4">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-primary" style="font-size: 1.1rem;">Total Reservations</h5>
+                    <h2 class="text-primary">{{ total_reservations }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row justify-content-center gx-4 gy-4 mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Spot Occupancy</h5>
+                    <canvas id="occupancyChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Recent Activity</h5>
+                    <canvas id="activityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row justify-content-center gx-4 gy-4 mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Monthly Revenue</h5>
+                    <canvas id="revenueChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Top Parking Lots</h5>
+                    <canvas id="lotsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 mb-5">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary btn-lg px-5">Back to Dashboard</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Spot Occupancy Chart
+    const occupancyCtx = document.getElementById('occupancyChart').getContext('2d');
+    new Chart(occupancyCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Occupied', 'Available'],
+            datasets: [{
+                data: [{{ occupied_spots }}, {{ available_spots }}],
+        backgroundColor: ['#dc3545', '#28a745'],
+        borderWidth: 2
+    }]
+    },
+        options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+    // Recent Activity Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    new Chart(activityCtx, {
+        type: 'line',
+        data: {
+            labels: ['Last 7 Days'],
+            datasets: [{
+                label: 'New Reservations',
+                data: [{{ recent_reservations }}],
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            tension: 0.4
+        }]
+    },
+        options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Monthly Revenue'],
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: [{{ total_revenue }}],
+            backgroundColor: '#ffc107',
+            borderColor: '#ffc107',
+            borderWidth: 1
+        }]
+    },
+        options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+    // Top Lots Chart
+    const lotsCtx = document.getElementById('lotsChart').getContext('2d');
+    new Chart(lotsCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for lot in top_lots %}'{{ lot.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Reservations',
+            data: [{% for lot in top_lots %}{{ lot.usage }}{% if not loop.last %}, {% endif %} {% endfor %}],
+    backgroundColor: [
+        '#007bff',
+        '#28a745',
+        '#ffc107',
+        '#dc3545',
+        '#6c757d'
+    ],
+        borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+            scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

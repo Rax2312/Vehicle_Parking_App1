@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Register - Vehicle Parking App{% endblock %}
+{% block content %}
+<style>
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    section.animated-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+        overflow: hidden;
+        display: flex;
+        flex-wrap: wrap;
+        background: #181818;
+    }
+
+    section.animated-bg span {
+        position: relative;
+        display: block;
+        width: calc(6.25vw - 2px);
+        height: calc(6.25vw - 2px);
+        background: #181818;
+        z-index: 2;
+        transition: 1.5s;
+        float: left;
+        border: 1px solid #222e3a;
+        box-sizing: border-box;
+    }
+
+    section.animated-bg span:hover {
+        background: #0077ff;
+        /* oceany/royal blue */
+        transition: 0s;
+    }
+
+    .signin,
+    .register-form {
+        position: absolute;
+        z-index: 10;
+        min-width: 350px;
+        max-width: 500px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: #222e3a;
+        border-radius: 1.2rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9);
+        padding: 2.5rem 2.5rem 2rem 2.5rem;
+        text-align: center;
+    }
+
+    .register-form .logo img {
+        width: 72px;
+        margin-bottom: 1rem;
+    }
+
+    .register-form h2 {
+        margin-bottom: 1.5rem;
+        font-weight: 800;
+        color: #0077ff;
+        letter-spacing: 2px;
+        font-size: 2rem;
+        text-transform: uppercase;
+    }
+
+    .register-form .btn-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+    }
+
+    .register-form .btn-link {
+        color: #0077ff;
+        font-weight: 600;
+    }
+
+    .register-form .btn-success {
+        background: #0077ff;
+        border: none;
+        font-weight: 700;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        padding: 0.7em 2.5em;
+        border-radius: 0.5em;
+    }
+
+    .register-form .form-control {
+        background: #181818;
+        color: #fff;
+        border: 1px solid #333;
+    }
+
+    .register-form label {
+        color: #aaa;
+        font-weight: 500;
+    }
+
+    @media (max-width: 600px) {
+        .register-form {
+            padding: 1.2rem;
+            min-width: unset;
+        }
+
+        section.animated-bg span {
+            width: calc(12.5vw - 2px);
+            height: calc(12.5vw - 2px);
+        }
+    }
+</style>
+<section class="animated-bg">
+    {% for i in range(16*8) %}<span></span>{% endfor %}
+</section>
+<div class="register-form">
+    <div class="logo">
+        <img src="https://img.icons8.com/color/96/parking.png" alt="Parking Logo" />
+    </div>
+    <h2 class="mb-4">User Signup</h2>
+    <form method="POST">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="phone_number" class="form-label">Phone Number</label>
+                <input type="text" class="form-control" id="phone_number" name="phone_number">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="first_name" class="form-label">First Name</label>
+                <input type="text" class="form-control" id="first_name" name="first_name">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="last_name" class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="last_name" name="last_name">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="address" class="form-label">Address</label>
+            <textarea class="form-control" id="address" name="address"></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="age" class="form-label">Age</label>
+            <input type="number" class="form-control" id="age" name="age">
+        </div>
+        <div class="btn-row">
+            <button type="submit" class="btn btn-success">Register</button>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-link">Login</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

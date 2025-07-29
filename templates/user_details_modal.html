@@ -1,0 +1,52 @@
+<div>
+    <h5 class="text-center mb-3">User Details</h5>
+    <table class="table table-bordered table-blue-bg">
+        <tbody>
+            <tr>
+                <th>ID</th>
+                <td>{{ user.id }}</td>
+            </tr>
+            <tr>
+                <th>Username</th>
+                <td>{{ user.username }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{ user.email }}</td>
+            </tr>
+            <tr>
+                <th>First Name</th>
+                <td>{{ user.first_name or '' }}</td>
+            </tr>
+            <tr>
+                <th>Last Name</th>
+                <td>{{ user.last_name or '' }}</td>
+            </tr>
+            <tr>
+                <th>Phone Number</th>
+                <td>{{ user.phone_number or '' }}</td>
+            </tr>
+            <tr>
+                <th>Address</th>
+                <td>{{ user.address or '' }}</td>
+            </tr>
+            <tr>
+                <th>Age</th>
+                <td>{{ user.age or '' }}</td>
+            </tr>
+            <tr>
+                <th>Role</th>
+                <td>{{ user.role }}</td>
+            </tr>
+            <tr>
+                <th>Flagged</th>
+                <td>{% if user.flagged %}<span class="badge bg-danger">Yes</span>{% else %}<span
+                        class="badge bg-success">No</span>{% endif %}</td>
+            </tr>
+            <tr>
+                <th>Registered</th>
+                <td>{{ user.created_at.strftime('%d-%b-%Y %H:%M') }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
